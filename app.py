@@ -1,28 +1,39 @@
 import streamlit as st
 import json
-import re
 
 # Load knowledge base from JSON files
 def load_knowledge_base():
-    with open('knowledge_base_en.json', 'r', encoding='utf-8') as f:
-        kb_en = json.load(f)
-    with open('knowledge_base_fr.json', 'r', encoding='utf-8') as f:
-        kb_fr = json.load(f)
-    with open('knowledge_base_ar.json', 'r', encoding='utf-8') as f:
-        kb_ar = json.load(f)
-    return kb_en, kb_fr, kb_ar
+    try:
+        with open('knowledge_base_en.json', 'r', encoding='utf-8') as f:
+            kb_en = json.load(f)['questions']
+        with open('knowledge_base_fr.json', 'r', encoding='utf-8') as f:
+            kb_fr = json.load(f)['questions']
+        with open('knowledge_base_ar.json', 'r', encoding='utf-8') as f:
+            kb_ar = json.load(f)['questions']
+        return kb_en, kb_fr, kb_ar
+    except Exception as e:
+        st.error(f"Error loading knowledge base: {str(e)}")
+        return [], [], []
 
 # Function to find the best matching response
 def get_best_response(question, knowledge_base):
+    if not question or not knowledge_base:
+        return "Please ask a question."
+    
     best_match = None
     highest_score = 0
     
     question = question.lower()
-    for qa_pair in knowledge_base:
-        score = sum(1 for word in question.split() if word in qa_pair['question'].lower())
-        if score > highest_score:
-            highest_score = score
-            best_match = qa_pair['answer']
+    
+    try:
+        for qa_pair in knowledge_base:
+            if 'question' in qa_pair and 'answer' in qa_pair:
+                score = sum(1 for word in question.split() if word in qa_pair['question'].lower())
+                if score > highest_score:
+                    highest_score = score
+                    best_match = qa_pair['answer']
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
     
     return best_match if highest_score > 0 else "I don't have information about that specific topic. Please try rephrasing your question."
 
